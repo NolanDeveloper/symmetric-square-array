@@ -11,7 +11,7 @@ using namespace metaprogramming;
 
 template <typename T, typename Allocator>
 std::ostream & operator<<(
-        std::ostream & os, 
+        std::ostream & os,
         const SymmetricSquareArray<T, Allocator> & array) {
     for (size_t row = 0; row < array.get_rank(); ++row) {
         for (size_t col = 0; col < array.get_rank(); ++col) {
@@ -22,9 +22,26 @@ std::ostream & operator<<(
     return os;
 }
 
+using SSA = SymmetricSquareArray<int>;
+
 void test() {
-    SymmetricSquareArray<int> a;
-    SymmetricSquareArray<int> b;
+    SSA a;
+    SSA b(a);
+    SSA c(std::move(a));
+    a = b;
+    a = std::move(c);
+
+    auto it = a.begin();
+    (void) it;
+    auto end = a.end();
+    (void) end;
+    auto cit = a.cbegin();
+    (void) cit;
+    auto cend = a.cend();
+    (void) cend;
+
+    // Test insertion
+    SSA e;
 }
 
 int main() {
@@ -43,7 +60,6 @@ int main() {
     ssd.insert(1, 0, 300);
     ssd.erase(4, 2);
     ssd.insert(1, 0, 300);
-
     SymmetricSquareArray<int> a;
     a.insert(0, 0, 1);
     a.insert(0, 0, 2);

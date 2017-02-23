@@ -1,4 +1,4 @@
-CXXFLAGS += -MMD -std=c++14
+CXXFLAGS += -MMD -std=c++14 -Wall -Wextra -Werror -g
 
 .PHONY: all
 all: a.out
