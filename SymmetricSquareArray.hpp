@@ -47,7 +47,7 @@ public:
     SymmetricSquareArray(size_t rank, Allocator allocator = Allocator())
             : rank(rank)
             , size(calculate_size(rank))
-            , capacity(calculate_size(rank))
+            , capacity(size)
             , allocator(allocator)
             , data(allocator.allocate(size)) {
         for (size_t i = 0; i < size; ++i) new (&data[i]) ValueType();
