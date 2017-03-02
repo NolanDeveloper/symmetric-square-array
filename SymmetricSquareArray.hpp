@@ -288,7 +288,7 @@ private:
                 difference_type rhs) { return lhs += rhs; }
 
         friend SymmetricSquareArrayIterator operator-(
-                const SymmetricSquareArrayIterator & lhs,
+                SymmetricSquareArrayIterator lhs,
                 difference_type rhs) { return lhs -= rhs; }
 
         friend bool operator==(const SymmetricSquareArrayIterator & lhs,
