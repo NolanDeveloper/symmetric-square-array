@@ -46,6 +46,17 @@ void test() {
 
 int main() {
     using namespace std;
+
+    SymmetricSquareArray<int> x(2);
+    SymmetricSquareArray<int> y = x;
+    cout << y.reference_count() << ' ' << x.reference_count() << "\n\n";
+    cout << x;
+    cout << y;
+    x(0, 0) = 42;
+    cout << y.reference_count() << ' ' << x.reference_count() << "\n\n";
+    cout << x;
+    cout << y;
+
     SymmetricSquareArray<int> ssz;
     SymmetricSquareArray<int> ssa(5);
     SymmetricSquareArray<int> ssb = ssa;

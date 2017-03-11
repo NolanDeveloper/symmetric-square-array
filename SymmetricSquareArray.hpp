@@ -41,7 +41,7 @@ class SymmetricSquareArray {
     void ensure_unique() {
         if (holder.unique()) return;
         holder = std::allocate_shared<ImplementationHolderType>(
-            holder->implementation.allocator,
+            holder->implementation.get_allocator(),
             *holder);
     }
 
@@ -71,7 +71,7 @@ public:
             o.holder->is_sharable
             ? o.holder
             : std::allocate_shared<ImplementationHolderType>(
-                o.holder->implementation.allocator,
+                o.holder->implementation.get_allocator(),
                 *o.holder)) { }
 
     SymmetricSquareArray(SymmetricSquareArray &&) = default;
@@ -89,6 +89,10 @@ public:
     }
 
     size_t get_rank() const { return holder->implementation.get_rank(); }
+
+    Allocator get_allocator() const {
+        return holder->implementation.get_allocator();
+    }
 
     SymmetricSquareArray & operator=(SymmetricSquareArray o) {
         swap(*this, o);
@@ -126,6 +130,8 @@ public:
 
     ConstIterator cbegin() const { return holder->implementation.cbegin(); }
     ConstIterator cend()   const { return holder->implementation.cend(); }
+
+    long reference_count() const { return holder.use_count(); }
 };
 
 }

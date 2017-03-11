@@ -9,9 +9,6 @@
 
 namespace metaprogramming {
 
-template <typename ValueType, typename Allocator>
-class SymmetricSquareArray;
-
 namespace ssa {
 
 template <typename ValueType, typename Allocator>
@@ -39,8 +36,6 @@ class Implementation {
         if (condition) return;
         throw std::runtime_error("Function was called with bad arguments");
     }
-
-    friend class SymmetricSquareArray<ValueType, Allocator>;
 
 public:
     Implementation(Allocator allocator = Allocator())
@@ -178,6 +173,8 @@ public:
     }
 
     size_t get_rank() const { return rank; }
+
+    Allocator get_allocator() const { return allocator; }
 
     Implementation & operator=(Implementation o) {
         swap(*this, o);
