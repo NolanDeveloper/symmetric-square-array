@@ -280,7 +280,7 @@ private:
             auto rank = array->rank;
             difference_type t = to_linear() - x;
             row = t / rank;
-            col = t / rank;
+            col = t % rank;
             return *this;
         }
 
