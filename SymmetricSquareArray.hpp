@@ -2,6 +2,7 @@
 
 #include "Implementation.hpp"
 
+#include <iostream>
 #include <memory>
 
 namespace metaprogramming {
@@ -22,9 +23,6 @@ struct ImplementationHolder {
     ImplementationHolder(size_t rank, Allocator allocator = Allocator())
         : is_sharable(true)
         , implementation(rank, allocator) { }
-
-    ImplementationHolder(const ImplementationHolder &) = default;
-    ImplementationHolder(ImplementationHolder &&) = default;
 };
 
 }
@@ -76,11 +74,12 @@ public:
 
     SymmetricSquareArray(SymmetricSquareArray &&) = default;
 
+    template <typename T>
     void insert(size_t row, size_t col,
-                const ValueType & val,
+                T && val,
                 const ValueType & nil = ValueType()) {
         enable_sharing();
-        holder->implementation.insert(row, col, val, nil);
+        holder->implementation.insert(row, col, std::forward<T>(val), nil);
     }
 
     void erase(size_t row, size_t col) {

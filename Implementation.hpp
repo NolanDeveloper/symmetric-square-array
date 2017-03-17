@@ -34,7 +34,18 @@ class Implementation {
 
     static void check_arguments(bool condition) {
         if (condition) return;
-        throw std::runtime_error("Function was called with bad arguments");
+        throw std::runtime_error("Function was called with wrong arguments");
+    }
+
+    static void
+    uninitialized_default_construct(ValueType * begin, ValueType * end) {
+        ValueType * current = begin;
+        try {
+            for (; current != end; ++current) new (current) ValueType();
+        } catch (...) {
+            for (; begin != current; ++begin) begin->~ValueType();
+            throw;
+        }
     }
 
 public:
@@ -51,7 +62,7 @@ public:
             , capacity(size)
             , allocator(allocator)
             , data(allocator.allocate(size)) {
-        for (size_t i = 0; i < size; ++i) new (&data[i]) ValueType();
+        uninitialized_default_construct(data, data + size);
     }
 
     Implementation(const Implementation & o)
@@ -73,69 +84,94 @@ public:
         allocator.deallocate(data, capacity);
     }
 
+    // Todo rewrite this shit
+    template <typename T>
     void insert(size_t row, size_t col,
-                const ValueType & val,
+                T && val,
                 const ValueType & nil = ValueType()) {
         if (col != row) {
             if (row < col) std::swap(row, col);
             insert(col, col, nil, nil);
             insert(row, row, nil, nil);
-            (*this)(row, col) = val;
+            (*this)(row, col) = std::forward<T>(val);
         } else {
             check_arguments(row <= rank && col <= rank);
             size_t new_rank = rank + 1;
             size_t new_size = size + new_rank;
             if (new_size <= capacity) {
-                ValueType * it = &data[new_rank * (new_rank + 1) / 2 - 1];
-                for (size_t r = new_rank - 1; r < new_rank; --r) {
-                    for (size_t c = r; c <= r; --c) {
-                        if (r < row) return;
-                        if (r == row) {
-                            *it = c < row ? nil : std::move(val);
-                        } else if (r + 1 < new_rank) {
-                            if (c < row) {
-                                *it = std::move(data[at(r - 1, c)]);
-                            } else if (c == row) {
-                                *it = nil;
-                            } else {
-                                *it = std::move(data[at(r - 1, c - 1)]);
-                            }
+                ValueType * end = &data[new_rank * (new_rank + 1) / 2];
+                ValueType * it = end - 1;
+                size_t cc; // Number of Constructed Columns in last row
+                           // We handle deletion here and not in destructor as
+                           // destructor only aware of rows that are whole
+                           // constructed.
+                try {
+                    for (cc = 0; cc < new_rank; ++cc) {
+                        if (cc < col) {
+                            new (it) ValueType(std::move(
+                                data[at(new_rank - 2, cc)]));
+                        } else if (cc == col) {
+                            new (it) ValueType(nil);
                         } else {
-                            if (c < row) {
-                                new (it) ValueType(std::move(
-                                    data[at(r - 1, c)]));
-                            } else if (c == row) {
-                                new (it) ValueType(nil);
-                            } else {
-                                new (it) ValueType(std::move(
-                                    data[at(r - 1, c - 1)]));
-                            }
+                            new (it) ValueType(std::move(
+                                data[at(new_rank - 2, cc - 1)]));
                         }
                         --it;
                     }
+                    for (size_t r = new_rank - 2; r <= new_rank - 2; --r) {
+                        for (size_t c = r; c <= r; --c) {
+                            if (r < row) return;
+                            if (r == row) {
+                                *it = c < row ? nil : std::forward<T>(val);
+                            } else if (r + 1 < new_rank) {
+                                if (c < row) {
+                                    *it = std::move(data[at(r - 1, c)]);
+                                } else if (c == row) {
+                                    *it = nil;
+                                } else {
+                                    *it = std::move(data[at(r - 1, c - 1)]);
+                                }
+                            }
+                            --it;
+                        }
+                    }
+                } catch (...) {
+                    it = end - cc;
+                    for (size_t i = 0; i < cc; ++i, ++it) it->~ValueType();
+                    throw;
                 }
             } else {
                 ValueType * new_data = allocator.allocate(new_size);
-                ValueType * it = &new_data[new_rank * (new_rank + 1) / 2 - 1];
-                for (size_t r = new_rank - 1; r < new_rank; --r) {
-                    for (size_t c = r; c <= r; --c) {
-                        if (r < row) {
-                            new (it) ValueType(std::move(data[at(r, c)]));
-                        } else if (r == row) {
-                            new (it) ValueType(c < row ? nil : std::move(val));
-                        } else {
-                            if (c < row) {
-                                new (it) ValueType(std::move(
-                                    data[at(r - 1, c)]));
-                            } else if (c == row) {
-                                new (it) ValueType(nil);
+                ValueType * end = &new_data[new_rank * (new_rank + 1) / 2];
+                ValueType * it = end - 1;
+                try {
+                    for (size_t r = new_rank - 1; r < new_rank; --r) {
+                        for (size_t c = r; c <= r; --c) {
+                            if (r < row) {
+                                new (it) ValueType(std::move(data[at(r, c)]));
+                            } else if (r == row) {
+                                new (it) ValueType(c < row ? nil : std::move(val));
                             } else {
-                                new (it) ValueType(std::move(
-                                    data[at(r - 1, c - 1)]));
+                                if (c < row) {
+                                    new (it) ValueType(std::move(
+                                        data[at(r - 1, c)]));
+                                } else if (c == row) {
+                                    new (it) ValueType(nil);
+                                } else {
+                                    new (it) ValueType(std::move(
+                                        data[at(r - 1, c - 1)]));
+                                }
                             }
+                            --it;
                         }
-                        --it;
                     }
+                } catch (...) {
+                    ++it;
+                    while (it != end) {
+                        it->~ValueType();
+                        ++it;
+                    }
+                    throw;
                 }
                 for (size_t i = 0; i < size; ++i) data[i].~ValueType();
                 allocator.deallocate(data, size);

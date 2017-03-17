@@ -8,9 +8,10 @@
 #include <algorithm>
 
 using namespace metaprogramming;
+using namespace std;
 
 template <typename T, typename Allocator>
-std::ostream & operator<<(
+ostream & operator<<(
         std::ostream & os,
         const SymmetricSquareArray<T, Allocator> & array) {
     for (size_t row = 0; row < array.get_rank(); ++row) {
@@ -44,6 +45,16 @@ void test() {
     SSA e;
 }
 
+    struct NonDefaultConstructable {
+        int n;
+        NonDefaultConstructable() = delete;
+        NonDefaultConstructable(int n) : n(n) { }
+    };
+
+    ostream & operator<<(ostream & os, NonDefaultConstructable ndc) {
+        return os << ndc.n;
+    }
+
 int main() {
     using namespace std;
 
@@ -57,11 +68,12 @@ int main() {
     cout << x;
     cout << y;
 
-    SymmetricSquareArray<int> ssz;
-    SymmetricSquareArray<int> ssa(5);
-    SymmetricSquareArray<int> ssb = ssa;
-    SymmetricSquareArray<int> ssc = std::move(ssb);
-    SymmetricSquareArray<int> ssd(2);
+    using Ssa = SymmetricSquareArray<int>;
+    Ssa ssz;
+    Ssa ssa(5);
+    Ssa ssb = ssa;
+    Ssa ssc = std::move(ssb);
+    Ssa ssd(2);
     ssb = ssa;
     ssc = move(ssb);
     swap(ssa, ssc);
@@ -78,6 +90,6 @@ int main() {
     a.insert(1, 1, 4);
     a.insert(5, 0, 5);
     a.erase(2, 1);
-    cout << a << '\n';
+
     return 0;
 }
