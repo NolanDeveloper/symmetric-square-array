@@ -171,6 +171,7 @@ public:
                         it->~ValueType();
                         ++it;
                     }
+                    allocator.deallocate(new_data, new_size);
                     throw;
                 }
                 for (size_t i = 0; i < size; ++i) data[i].~ValueType();
