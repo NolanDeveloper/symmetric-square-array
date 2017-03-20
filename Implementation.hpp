@@ -28,8 +28,8 @@ class Implementation {
         return sum_n(rank);
     }
 
-    static size_t at(size_t row, size_t col) {
-        return col > row ? at(col, row) : sum_n(row) + col;
+    static size_t to_linear_index(size_t row, size_t col) {
+        return col > row ? to_linear_index(col, row) : sum_n(row) + col;
     }
 
     static void check_arguments(bool condition) {
@@ -109,12 +109,12 @@ public:
                     for (cc = 0; cc < new_rank; ++cc) {
                         if (cc < col) {
                             new (it) ValueType(std::move(
-                                data[at(new_rank - 2, cc)]));
+                                data[to_linear_index(new_rank - 2, cc)]));
                         } else if (cc == col) {
                             new (it) ValueType(nil);
                         } else {
                             new (it) ValueType(std::move(
-                                data[at(new_rank - 2, cc - 1)]));
+                                data[to_linear_index(new_rank - 2, cc - 1)]));
                         }
                         --it;
                     }
@@ -125,11 +125,11 @@ public:
                                 *it = c < row ? nil : std::forward<T>(val);
                             } else if (r + 1 < new_rank) {
                                 if (c < row) {
-                                    *it = std::move(data[at(r - 1, c)]);
+                                    *it = std::move(data[to_linear_index(r - 1, c)]);
                                 } else if (c == row) {
                                     *it = nil;
                                 } else {
-                                    *it = std::move(data[at(r - 1, c - 1)]);
+                                    *it = std::move(data[to_linear_index(r - 1, c - 1)]);
                                 }
                             }
                             --it;
@@ -148,18 +148,18 @@ public:
                     for (size_t r = new_rank - 1; r < new_rank; --r) {
                         for (size_t c = r; c <= r; --c) {
                             if (r < row) {
-                                new (it) ValueType(std::move(data[at(r, c)]));
+                                new (it) ValueType(std::move(data[to_linear_index(r, c)]));
                             } else if (r == row) {
                                 new (it) ValueType(c < row ? nil : std::move(val));
                             } else {
                                 if (c < row) {
                                     new (it) ValueType(std::move(
-                                        data[at(r - 1, c)]));
+                                        data[to_linear_index(r - 1, c)]));
                                 } else if (c == row) {
                                     new (it) ValueType(nil);
                                 } else {
                                     new (it) ValueType(std::move(
-                                        data[at(r - 1, c - 1)]));
+                                        data[to_linear_index(r - 1, c - 1)]));
                                 }
                             }
                             --it;
@@ -196,13 +196,13 @@ public:
             for (size_t r = 0; r < new_rank; ++r) {
                 if (r < row) continue;
                 for (size_t c = 0; c <= r; ++c) {
-                    data[at(r, c)] = c < row
-                        ? std::move(data[at(r + 1, c)])
-                        : std::move(data[at(r + 1, c + 1)]);
+                    data[to_linear_index(r, c)] = c < row
+                        ? std::move(data[to_linear_index(r + 1, c)])
+                        : std::move(data[to_linear_index(r + 1, c + 1)]);
                 }
             }
-            size_t start = at(rank - 1, 0);
-            size_t end = at(rank - 1, rank - 1) + 1;
+            size_t start = to_linear_index(rank - 1, 0);
+            size_t end = to_linear_index(rank - 1, rank - 1) + 1;
             for (size_t i = start; i < end; ++i) data[i].~ValueType();
             rank = new_rank;
             size = new_size;
@@ -219,11 +219,11 @@ public:
     }
 
     ValueType & operator()(size_t row, size_t col) {
-        return data[at(row, col)];
+        return data[to_linear_index(row, col)];
     }
 
     const ValueType & operator()(size_t row, size_t col) const {
-        return data[at(row, col)];
+        return data[to_linear_index(row, col)];
     }
 
     static void swap(Implementation & lhs, Implementation & rhs) {
