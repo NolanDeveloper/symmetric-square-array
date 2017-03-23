@@ -3,7 +3,7 @@ CXXFLAGS += -MMD -std=c++14 -Wall -Wextra -Werror -g
 .PHONY: all
 all: a.out
 
-a.out: main.o
+a.out: Main.o
 	$(CXX) -o $@ $^
 
 .PHONY: clean
