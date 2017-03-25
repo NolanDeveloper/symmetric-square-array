@@ -1,4 +1,4 @@
-CXXFLAGS += -MMD -std=c++14 -Wall -Wextra -Werror -g
+CXXFLAGS += -MMD -std=c++14 -Wall -Wextra -Werror -g -fmax-errors=4
 
 .PHONY: all
 all: a.out

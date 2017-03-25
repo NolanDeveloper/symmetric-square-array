@@ -6,6 +6,7 @@
 #include <iterator>
 #include <memory>
 #include <stdexcept>
+#include <type_traits>
 
 namespace metaprogramming {
 
@@ -49,7 +50,14 @@ class Implementation {
   }
 
 public:
-  Implementation(size_t rank = 0, Allocator allocator = Allocator())
+  Implementation(Allocator allocator = Allocator())
+      : rank(0)
+      , size(0)
+      , capacity(0)
+      , allocator(allocator)
+      , data(nullptr) { }
+
+  Implementation(size_t rank, Allocator allocator = Allocator())
       : rank(rank)
       , size(calculate_size(rank))
       , capacity(size)
@@ -77,15 +85,14 @@ public:
     allocator.deallocate(data, capacity);
   }
 
-  template <typename T>
-  void insert(size_t row, size_t col, T && val,
+  void insert(size_t row, size_t col, const ValueType & val,
       const ValueType & nil = ValueType()) {
     using namespace std;
     if (col != row) {
       if (row < col) std::swap(row, col);
       insert(row, row, nil, nil);
       insert(col, col, nil, nil);
-      (*this)(row + 1, col) = forward<T>(val);
+      (*this)(row + 1, col) = val;
     } else {
       check_arguments(row <= rank && col <= rank);
       size_t new_rank = rank + 1;
@@ -100,20 +107,18 @@ public:
         try {
           if (row == rank) { // col == rank as well
             cc = 0;
-            new (it--) ValueType(forward<T>(val));
+            new (it--) ValueType(val);
             for (cc = 1; cc < new_rank; ++cc) {
               new (it--) ValueType(nil);
             }
           } else {
             for (cc = 0; cc < new_rank; ++cc) {
               if (cc < col) {
-                new (it) ValueType(
-                  move(data[to_linear_index(new_rank - 2, cc)]));
+                new (it) ValueType(data[to_linear_index(new_rank - 2, cc)]);
               } else if (cc == col) {
                 new (it) ValueType(nil);
               } else {
-                new (it) ValueType(
-                  move(data[to_linear_index(new_rank - 2, cc - 1)]));
+                new (it) ValueType(data[to_linear_index(new_rank - 2, cc - 1)]);
               }
               --it;
             }
@@ -123,14 +128,14 @@ public:
               if (r < row) return;
               if (r == row) {
                 if (c < row) *it = nil;
-                else         *it = forward<T>(val);
+                else         *it = val;
               } else if (r + 1 < new_rank) {
                 if (c < row) {
-                  *it = move(data[to_linear_index(r - 1, c)]);
+                  *it = data[to_linear_index(r - 1, c)];
                 } else if (c == row) {
                   *it = nil;
                 } else {
-                  *it = move(data[to_linear_index(r - 1, c - 1)]);
+                  *it = data[to_linear_index(r - 1, c - 1)];
                 }
               }
               --it;
@@ -149,17 +154,16 @@ public:
           for (size_t r = new_rank - 1; r < new_rank; --r) {
             for (size_t c = r; c <= r; --c) {
               if (r < row) {
-                new (it) ValueType(move(data[to_linear_index(r, c)]));
+                new (it) ValueType(data[to_linear_index(r, c)]);
               } else if (r == row) {
-                new (it) ValueType(c < row ? nil : move(val));
+                new (it) ValueType(c < row ? nil : val);
               } else {
                 if (c < row) {
-                  new (it) ValueType(move(data[to_linear_index(r - 1, c)]));
+                  new (it) ValueType(data[to_linear_index(r - 1, c)]);
                 } else if (c == row) {
                   new (it) ValueType(nil);
                 } else {
-                  new (it) ValueType(
-                    move(data[to_linear_index(r - 1, c - 1)]));
+                  new (it) ValueType(data[to_linear_index(r - 1, c - 1)]);
                 }
               }
               --it;
@@ -196,7 +200,7 @@ public:
       for (size_t r = row; r < new_rank; ++r) {
         for (size_t c = 0; c <= r; ++c) {
           data[to_linear_index(r, c)] =
-            std::move(data[to_linear_index(r + 1, c < row ? c : c + 1)]);
+            data[to_linear_index(r + 1, c < row ? c : c + 1)];
         }
       }
       size_t start = to_linear_index(rank - 1, 0);
@@ -257,7 +261,7 @@ private:
     size_t row;
     size_t col;
 
-    size_t to_linear() { return row * array->rank + col; }
+    size_t to_linear() const { return row * array->rank + col; }
 
   public:
     ImplementationIterator()
@@ -326,6 +330,10 @@ private:
       row = t / rank;
       col = t % rank;
       return *this;
+    }
+
+    difference_type operator-(const ImplementationIterator & x) const {
+      return to_linear() - x.to_linear();
     }
 
     ValueType & operator[](difference_type x) const {

@@ -15,6 +15,10 @@ struct ImplementationHolder {
   bool is_sharable;
   ImplementationType implementation;
 
+  ImplementationHolder(Allocator allocator)
+    : is_sharable(true)
+    , implementation(allocator) { }
+
   ImplementationHolder(size_t rank, Allocator allocator)
     : is_sharable(true)
     , implementation(rank, allocator) { }
@@ -49,7 +53,12 @@ class SymmetricSquareArray {
   }
 
 public:
-  SymmetricSquareArray(size_t rank = 0, Allocator allocator = Allocator())
+  SymmetricSquareArray(Allocator allocator = Allocator())
+    : holder(
+      std::allocate_shared<ImplementationHolderType>(
+        allocator, allocator)) { }
+
+  SymmetricSquareArray(size_t rank, Allocator allocator = Allocator())
     : holder(
       std::allocate_shared<ImplementationHolderType>(
         allocator, rank, allocator)) { }
