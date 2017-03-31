@@ -251,13 +251,13 @@ private:
     using iterator_category = std::random_access_iterator_tag;
 
   private:
-    using arrayptr_t =
+    using ArrayPtr =
       std::conditional_t<
         IsConst,
         const Implementation *,
         Implementation *>;
 
-    arrayptr_t array;
+    ArrayPtr array;
     size_t row;
     size_t col;
 
@@ -269,7 +269,7 @@ private:
         , row(0)
         , col(0) { }
 
-    ImplementationIterator(arrayptr_t array, size_t row, size_t col)
+    ImplementationIterator(ArrayPtr array, size_t row, size_t col)
         : array(array)
         , row(row)
         , col(col) { }
@@ -313,7 +313,7 @@ private:
     }
 
     ValueType * operator->() const {
-      return std::addressof((*array)[row, col]);
+      return std::addressof((*array)(row, col));
     }
 
     ImplementationIterator & operator+=(difference_type x) {
